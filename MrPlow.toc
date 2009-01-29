@@ -1,0 +1,20 @@
+## Interface: 20300
+## Title: Mr Plow
+## Author: Wobin
+## Notes: Regain that wasted space!
+## Version: 8
+## X-Category: Inventory
+## LoadOnDemand: 0
+## SavedVariables: MrPlowDB
+## SavedVariablesPerCharacter: MrPlowIgnoreDB
+## OptionalDeps: Ace3, LibPeriodicTable-3.1
+
+embeds.xml
+
+Locale\Localization.enUS.lua
+Locale\Localization.deDE.lua
+Locale\Localization.koKR.lua
+
+
+MrPlow.lua
+PlowEngine.lua
