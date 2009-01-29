@@ -86,13 +86,6 @@ local bagcheck = function()
 	return bags
 end
 
-local works = coroutine.create(function()
-	while MrPlow.currentProcess do
-	end
-
-	PlowEngine:MassSort(unpack(bags))
-end)
-
 function MrPlow:DoStuff(args)
 	MrPlow:Print(args)
 	local bags = bagcheck()
@@ -102,9 +95,6 @@ function MrPlow:DoStuff(args)
 		PlowEngine:Defragment(unpack(bags))
 	elseif args == "sort" then
 		PlowEngine:MassSort(unpack(bags))
-	elseif args == "works" then
-		PlowEngine:Defragment(unpack(bags))
-		coroutine.resume(works)
 	elseif args == "bankstack" then
 		PlowEngine:Restack(-1,5,6,7,8,9,10,11)
 	elseif args == "bankdefrag" then
