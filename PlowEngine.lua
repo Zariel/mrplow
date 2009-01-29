@@ -253,7 +253,7 @@ function PlowEngine:Restack(...)
 			-- Each dupe has {Bag, Slot, Current Stack Size, Max Stack Size}
 			local target = notFull[item]
 			local toFill = target[4] - target[3]
-			
+
 			if fromStack[3] < toFill then
 				-- if we can't fill the final stack, move the whole first stack
 				-- across
@@ -265,7 +265,7 @@ function PlowEngine:Restack(...)
 				-- list and shift the target to be the last on the dupe list
 				PlowEngine:MoveSlot(fromStack[1], fromStack[2], toFill, target[1], target[2])
 				fromStack[3] = fromStack[3] - toFill
-				if fromStack[3] > 0 then 
+				if fromStack[3] > 0 then
 					-- if there's leftover, then move the remainder to the
 					-- beginning of the dupe list
 					table.insert(stacks, 1, getTable(fromStack[1], fromStack[2], fromStack[3], fromStack[4]))
@@ -277,14 +277,14 @@ function PlowEngine:Restack(...)
 				-- Now, if stacks is empty, we have nothing else to fill, so
 				-- drop out of the loop and clean up notFull[item]
 			end
-			
+
 			returnTable(fromStack)
 		end
 		if notFull[item] then
 			returnTable(notFull[item])
 		end
 	end
-   -- Now run	
+	-- Now run
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Restack")
 		currentProcess = PlowEngine.Restack
@@ -326,30 +326,30 @@ function PlowEngine:Defragment(...)
 							table.insert(full, getTable(bag, slot))
 						end
 					end
-				end       
+				end
 			end
 		end
-	end            
+	end
 	-- Now we have two lists. Depending on where we want the empty space (at
 	-- the top or bottom) we have a list of empty spaces and a list of full
 	-- spaces going in the opposite direction. Now we take from the full list,
-	-- and move each item into the empty list. 
-	
+	-- and move each item into the empty list.
+
 	while next(full) do
 		local loose = table.remove(full, 1) -- get the last full slot
 		local space = table.remove(empty, 1) -- and the first available empty slot
 		local lPosition, sPosition
-		
+
 		if loose and space then
 			lPosition = 100* loose[1] + loose[2]
 			sPosition = 100* space[1] + space[2]
 		end
 		-- Now if the space is past the item (depending on which direction
-		-- we're defragging in...) 
+		-- we're defragging in...)
 		if (not loose or not space) or -- We don't have anything to move or place to move it
-			(sPosition > lPosition and db.EmptySpace == "Bottom") 
+			(sPosition > lPosition and db.EmptySpace == "Bottom")
 			or (sPosition < lPosition and db.EmptySpace == "Top") then -- We've crossed over the midpoint
-		   
+
 			if loose then
 				returnTable(loose)
 			end
@@ -362,8 +362,8 @@ function PlowEngine:Defragment(...)
 		end
 		-- Otherwise, move away!
 		PlowEngine:MoveSlot(loose[1], loose[2], -1, space[1], space[2])
-   end
-   -- Now run	
+	end
+	-- Now run
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Defragment")
 		currentProcess = PlowEngine.Defragment
@@ -375,7 +375,6 @@ function PlowEngine:Defragment(...)
 		returnTable(empty)
 		returnTable(full)
 	end
-   
 end
 
 -- Now for the sorting function. This is going to be hard to refactor
@@ -383,7 +382,7 @@ end
 -- order to get the required result.
 
 -----------------Sort Functions -----------------------------------------
--- Better to define them locally outside the function so they're only created 
+-- Better to define them locally outside the function so they're only created
 -- once rather than every time the function is run. I'm kinda considering a
 -- cascading set of sort functions so it goes through the top level and
 -- filters down until if there's no rule, it sticks to alphabetical, and then
@@ -432,7 +431,7 @@ end
 local function SortLocation(a, b)
 	if (not a.itemEquipLoc or b.itemEquipLoc or a.itemEquipLoc == "" or b.itemEquipLoc == "") then
 		local pass, ret = pcall(function() return SortRarity(a, b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"SortRarity: "..ret)
@@ -441,11 +440,11 @@ local function SortLocation(a, b)
 	end
 	if not a.itemEquipLoc or not armWepRank[a.itemEquipLoc] then MrPlow:Print("a:"..a.itemName) end
 	if not b.itemEquipLoc or not armWepRank[b.itemEquipLoc] then MrPlow:Print("b:"..b.itemName) end
-	return armWepRank[a.itemEquipLoc] < armWepRank[b.itemEquipLoc] 
+	return armWepRank[a.itemEquipLoc] < armWepRank[b.itemEquipLoc]
 end
 
 -- By this time, we're the same type of item so we only need to check one of
--- the inputs for details 
+-- the inputs for details
 -- We're only going to subsort within the tradegoods and consumable category
 -- so far as they're the only ones that are badly grouped and require PT
 -- assistance to get viable results.
@@ -456,10 +455,10 @@ local function SortPTCategory(a, b)
 	local aSet = select(2, PT:ItemInSet(a.itemID, "Tradeskill.Mat.ByType")) or select(2, PT:ItemInSet(a.itemID, "Tradeskill.Mat")) or select(2, PT:ItemInSet(a.itemID, "Tradeskill"))
 	local bSet = select(2, PT:ItemInSet(b.itemID, "Tradeskill.Mat.ByType")) or select(2, PT:ItemInSet(b.itemID, "Tradeskill.Mat")) or select(2, PT:ItemInSet(b.itemID, "Tradeskill"))
 	if type(aSet) == "string" and type(bSet) == "string" then
-		a.Set = aSet 
+		a.Set = aSet
 		b.Set = bSet
-		local aRank = ingredientRanking[aSet] 
-		local bRank = ingredientRanking[bSet] 
+		local aRank = ingredientRanking[aSet]
+		local bRank = ingredientRanking[bSet]
 
 
 		if not aRank and not bRank then
@@ -467,7 +466,7 @@ local function SortPTCategory(a, b)
 				return aSet < bSet
 			else
 				local pass, ret = pcall(function() return SortLocation(a, b) end)
-				if pass then 
+				if pass then
 					return ret
 				else
 					ErrorPrint(a,b,"SortLocation: "..ret)
@@ -497,17 +496,17 @@ local function SortSpecificPT(a, b)
 	local aSet, bSet
 	-- Step through each of the special consumable categories, and assign the first available
 	for i=1,#sortCategories do
-		aSet = select(2, PT:ItemInSet( a.itemID, sortCategories[i])) 
+		aSet = select(2, PT:ItemInSet( a.itemID, sortCategories[i]))
 		if aSet then break end
 	end
 	for i=1,#sortCategories do
-		bSet = select(2, PT:ItemInSet( b.itemID, sortCategories[i])) 
+		bSet = select(2, PT:ItemInSet( b.itemID, sortCategories[i]))
 		if bSet then break end
 	end
-	
+
 	if not aSet and not bSet then
 		local pass, ret = pcall(function() return SortPTCategory(a,b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"PTCat: "..ret)
@@ -519,10 +518,10 @@ local function SortSpecificPT(a, b)
 	if aSet then a.Set = aSet end
 	if bSet then b.Set = bSet end
 
-	if aSet == bSet then 
+	if aSet == bSet then
 		return SortLocation(a, b)
 		--One in the special group and the other not? Special group has priority to be at the end
-	elseif (aSet and not bSet) or (not aSet and bSet) then 
+	elseif (aSet and not bSet) or (not aSet and bSet) then
 		return (aSet and 1 or -1) > (bSet and 1 or -1)
 	elseif aSet and bSet then
 		return aSet < bSet
@@ -532,7 +531,7 @@ end
 local function SortItemRanking(a,b)
 	if a.itemRanking == b.itemRanking then
 		local pass, ret = pcall(function() return SortSpecificPT(a, b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"Specific PT: "..ret)
@@ -549,7 +548,7 @@ end
 local function SortJunk(a, b)
 	if (a.itemRarity > 0 and b.itemRarity > 0) or (a.itemRarity == b.itemRarity) then
 		local pass, ret = pcall(function() return SortItemRanking(a,b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"Item Ranking: "..ret)
@@ -804,5 +803,5 @@ function PlowEngine:PrintList(List, limit)
 end
 
 function PlowEngine:SortMe()
-    self:MassSort({0,1,2,3,4})
+    self:MassSort(0,1,2,3,4)
 end

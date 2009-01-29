@@ -108,11 +108,11 @@ end
 function MrPlow:DoStuff(args)
 	self:BagCheck()
 	if args == "stack" then
-		PlowEngine:Restack(1, 2, 3, 4)
+		PlowEngine:Restack(0, 1, 2, 3, 4)
 	elseif args == "defrag" then
-		PlowEngine:Defragment(1, 2, 3, 4)
+		PlowEngine:Defragment(0, 1, 2, 3, 4)
 	elseif args == "sort" then
-		PlowEngine:MassSort(1, 2, 3, 4)
+		PlowEngine:MassSort(0, 1, 2, 3, 4)
 	elseif args == "bankstack" then
 		PlowEngine:Restack(-1,5,6,7,8,9,10,11)
 	elseif args == "bankdefrag" then
