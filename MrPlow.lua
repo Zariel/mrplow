@@ -60,11 +60,14 @@ returnTable = MrPlow.returnTable
 
 function MrPlow:OnInitialize()
 	self.version = "5.0."..string.sub("$Revision: 60912 $", 12, -3)
-	self.db = LibStub("AceDB-3.0"):New("MrPlowDB", { profile = {IgnoreItems = { [6265] = true },
-								IgnoreSlots = {},
-								IgnoreBags = {},
-								EmptySpace = "Bottom",
-								} });
+	self.db = LibStub("AceDB-3.0"):New("MrPlowDB", {
+		profile = {
+			IgnoreItems = { [6265] = true },
+			IgnoreSlots = {},
+			IgnoreBags = {},
+			EmptySpace = "Bottom",
+		} });
+
 	db = self.db.profile;
 	self:RegisterChatCommand( "mrplow", "DoStuff")
 	self:RegisterChatCommand( "mp", "DoStuff")
@@ -73,28 +76,32 @@ function MrPlow:OnInitialize()
 	meta.__mode = "v"
 end
 
-local bagcheck = function()
-	local bags = {0,1,2,3,4}
-	for k,v in pairs(bags) do
-		local name = GetBagName(v)
+function MrPlow:BagCheck()
+	for i = 1, 4 do
+		local name = GetBagName(i)
 		local btype = GetItemFamily(name)
-		if (btype and btype > 0) and name ~= "Backpack" then
-			table.remove(bags, k)
+		-- Ignores all slots in a bag
+		if (btype and btype > 0) and name ~= "Backpack" and not self:IsIgnoredSlot(i, 1) then
+			for j = 1, GetContainerNumSlots(i) do
+				self:IgnoreSlots(i, j)
+			end
+		-- This checks if the bag has changed to a bag we can sort
+		elseif self:IsIgnoredSlot(i, 1) then
+			for j = 1, GetContainerNumSlots(i) do
+				self:UnignoreSlots(i, j)
+			end
 		end
 	end
-
-	return bags
 end
 
 function MrPlow:DoStuff(args)
-	MrPlow:Print(args)
-	local bags = bagcheck()
+	self:BagCheck()
 	if args == "stack" then
-		PlowEngine:Restack(unpack(bags))
+		PlowEngine:Restack(1, 2, 3, 4)
 	elseif args == "defrag" then
-		PlowEngine:Defragment(unpack(bags))
+		PlowEngine:Defragment(1, 2, 3, 4)
 	elseif args == "sort" then
-		PlowEngine:MassSort(unpack(bags))
+		PlowEngine:MassSort(1, 2, 3, 4)
 	elseif args == "bankstack" then
 		PlowEngine:Restack(-1,5,6,7,8,9,10,11)
 	elseif args == "bankdefrag" then
@@ -106,6 +113,10 @@ end
 
 function MrPlow:OnClick()
 	self.PlowEngine:SortMe()
+end
+
+function MrPlow:IsIgnoredSlot(bag, slot)
+	return db.IgnoreSlots[bag] and db.IgnoreSlots[bag][slot] or false
 end
 
 function MrPlow:IgnoreSlots(bag, slot)
