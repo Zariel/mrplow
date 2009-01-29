@@ -18,7 +18,7 @@ local Clean  = getTable()
 
 local L = LibStub("AceLocale-3.0"):GetLocale("MrPlow", true)
 
-PT = LibStub("LibPeriodicTable-3.1")
+local PT = LibStub("LibPeriodicTable-3.1")
 
 function PlowEngine:Enable()
 	db = MrPlow.db.profile
@@ -399,11 +399,11 @@ end
 --          ItemRank
 --          Junk - Top level check
 
-function SortCount(a,b)
+local function SortCount(a,b)
 	return a.itemCount < b.itemCount
 end
 
-function SortAlpha(a,b)
+local function SortAlpha(a,b)
 	if a.itemName == b.itemName then
 		local pass, ret = pcall(function() return SortCount(a,b) end)
 		if pass then 
@@ -416,7 +416,7 @@ function SortAlpha(a,b)
 	return a.itemName < b.itemName
 end
 
-function SortRarity(a, b)
+local function SortRarity(a, b)
 	if a.itemRarity == b.itemRarity then
 		local pass, ret = pcall(function() return SortAlpha(a,b) end)
 		if pass then 
@@ -429,7 +429,7 @@ function SortRarity(a, b)
 	return a.itemRarity < b.itemRarity
 end
 
-function SortLocation(a, b)
+local function SortLocation(a, b)
 	if (not a.itemEquipLoc or b.itemEquipLoc or a.itemEquipLoc == "" or b.itemEquipLoc == "") then
 		local pass, ret = pcall(function() return SortRarity(a, b) end)
 		if pass then 
@@ -449,7 +449,7 @@ end
 -- We're only going to subsort within the tradegoods and consumable category
 -- so far as they're the only ones that are badly grouped and require PT
 -- assistance to get viable results.
-function SortPTCategory(a, b)
+local function SortPTCategory(a, b)
 	if (a.itemType ~= L["Trade Goods"]) then
 		return SortLocation(a, b)
 	end
@@ -493,7 +493,7 @@ function SortPTCategory(a, b)
 	return SortLocation(a, b)
 end
 
-function SortSpecificPT(a, b)
+local function SortSpecificPT(a, b)
 	local aSet, bSet
 	-- Step through each of the special consumable categories, and assign the first available
 	for i=1,#sortCategories do
@@ -529,7 +529,7 @@ function SortSpecificPT(a, b)
 	end
 end
 
-function SortItemRanking(a,b)
+local function SortItemRanking(a,b)
 	if a.itemRanking == b.itemRanking then
 		local pass, ret = pcall(function() return SortSpecificPT(a, b) end)
 		if pass then 
@@ -546,7 +546,7 @@ end
 -- grouping, depending on where the empty space is set to be at the top or
 -- bottom. If A is not junk, and B is, A is less than B. If A is junk and
 -- B isn't then A is greater than B.
-function SortJunk(a, b)
+local function SortJunk(a, b)
 	if (a.itemRarity > 0 and b.itemRarity > 0) or (a.itemRarity == b.itemRarity) then
 		local pass, ret = pcall(function() return SortItemRanking(a,b) end)
 		if pass then 
@@ -560,7 +560,7 @@ function SortJunk(a, b)
 	end
 end
 
-function TopLevelSort(a,b)
+local function TopLevelSort(a,b)
 	if a and b then
 		local pass, ret = pcall(function() return SortJunk(a,b) end)
 		if pass then
@@ -574,11 +574,11 @@ function TopLevelSort(a,b)
 	end
 end
 
-function ErrorPrint(a,b,func)
+local function ErrorPrint(a,b,func)
 	MrPlow:Print("Error in "..func.." between "..a.itemName.." at "..a.bag..":"..a.slot.." and "..b.itemName.." at "..b.bag..":"..b.slot)
 end
 
-Item = getTable()
+local Item = getTable()
 
 Item.mt = getTable()
 
@@ -628,20 +628,19 @@ end
 --
 -- What we need is to check that what we're swapping with isn't already where it's supposed to be.
 function PlowEngine:MassSort(...)
-    local OriginalLoc = getTable()
-    local Jumble = getTable()
-    local Dirty  = getTable()
-	local itemCount = 0	
+	local OriginalLoc = getTable()
+	local Jumble = getTable()
+	local Dirty  = getTable()
+	local itemCount = 0
 	local tbag
-	
+
 	if select("#", ...) > 0 then
 		BagList = getTable(...)
 		MrPlow:Print("Cleaning table")
-		Clean = getTable() 
+		Clean = getTable()
 	end
 
-	for bag, slot in self:NextSlot(BagList) do 
-		
+	for bag, slot in self:NextSlot(BagList) do
 		if bag > 50 then
 			infoFunc = GetGuildBankItemInfo
 			linkFunc = GetGuildBankItemLink
@@ -659,7 +658,7 @@ function PlowEngine:MassSort(...)
 				else
 					break;
 				end
-			end				
+			end
 			local link = select(3, (linkFunc(tbag, slot) or ""):find("item:(%d+)"))
 			if link and not db.IgnoreItems[link] then
 				itemCount = itemCount + 1
@@ -669,13 +668,13 @@ function PlowEngine:MassSort(...)
 			end
 		end
 	end
-    table.sort(Jumble)
+	table.sort(Jumble)
 	--PlowEngine:PrintList(Jumble,114)
 	for i=1,#Jumble do
-	    local item = Jumble[i]
-	    -- If the current item to be placed does not have an identical item there or is in the same position 
-	    -- as what needs to move into it, then continue
-		if item ~= Jumble[item.pos] and item ~= OriginalLoc[i][3] then 
+		local item = Jumble[i]
+		-- If the current item to be placed does not have an identical item there or is in the same position
+		-- as what needs to move into it, then continue
+		if item ~= Jumble[item.pos] and item ~= OriginalLoc[i][3] then
 			-- If we haven't moved something into either of these slots, then continue
 			if not (Dirty[item.bag..":"..item.slot] or Dirty[OriginalLoc[i][1]..":"..OriginalLoc[i][2]]) then
 				-- If we're not displacing an already correct location, then continue
@@ -687,7 +686,7 @@ function PlowEngine:MassSort(...)
 				end
 			end
 		end
-    end
+	end
 	returnTable(Dirty)
 	returnTable(Jumble)
 	returnTable(OriginalLoc)
