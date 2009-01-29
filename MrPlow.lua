@@ -96,15 +96,11 @@ function MrPlow:BagCheck()
 		local name = GetBagName(i)
 		local btype = GetItemFamily(name)
 		-- Ignores all slots in a bag
-		if (btype and btype > 0) and name ~= "Backpack" and not self:IsIgnoredSlot(i, 1) then
-			for j = 1, GetContainerNumSlots(i) do
-				self:IgnoreSlots(i, j)
-			end
+		if (btype and btype > 0) and name ~= "Backpack" then
+			db.IgnoreBags[i] = true
 		-- This checks if the bag has changed to a bag we can sort
-		elseif self:IsIgnoredSlot(i, 1) then
-			for j = 1, GetContainerNumSlots(i) do
-				self:UnignoreSlots(i, j)
-			end
+		elseif db.IgnoreBags[i] then
+			db.IgnoreBags[i] = nil
 		end
 	end
 end
