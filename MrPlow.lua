@@ -113,6 +113,10 @@ function MrPlow:DoStuff(args)
 		PlowEngine:Defragment(0, 1, 2, 3, 4)
 	elseif args == "sort" then
 		PlowEngine:MassSort(0, 1, 2, 3, 4)
+	elseif args == "theworks" then
+		PlowEngine:Restack(0, 1, 2, 3, 4)
+		PlowEngine:Defragment(0, 1, 2, 3, 4)
+		PlowEngine:MassSort(0, 1, 2, 3, 4)
 	elseif args == "bankstack" then
 		PlowEngine:Restack(-1,5,6,7,8,9,10,11)
 	elseif args == "bankdefrag" then

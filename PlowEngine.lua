@@ -20,6 +20,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale("MrPlow", true)
 
 local PT = LibStub("LibPeriodicTable-3.1")
 
+local queue = getTable()
+
 function PlowEngine:Enable()
 	db = MrPlow.db.profile
 	PlowEngine:SetScript("OnUpdate", PlowEngine.OnUpdate)
@@ -180,7 +182,7 @@ function PlowEngine:Consolidate(BagsFrom, BagsTo)
 					local link = select(3, (GetContainerItemLink(bag, slot) or ""):find("item:(%d+):"))
 					if link and PT:ItemInSet(link, specialBagContents[bagType]) then
 						table.insert(fill, getTable(bag,slot))
-						available = available - 1 
+						available = available - 1
 					end
 				end
 			end
@@ -193,6 +195,12 @@ end
 -- ammo usage, spell component usage etc) will use that non-full stack rather
 -- than a full one, maintaining the compression as much as possible.
 function PlowEngine:Restack(...)
+	if currentProccess then
+		table.insert(queue, getTable(PlowEngine.Restack, ...))
+		self:Show()
+		return
+	end
+
 	local db = MrPlow.db.profile
 	local notFull = getTable()
 	local dupe = getTable()
@@ -300,6 +308,12 @@ end
 
 
 function PlowEngine:Defragment(...)
+	if currentProccess then
+		table.insert(queue, getTable(PlowEngine.Defragment, ...))
+		self:Show()
+		return
+	end
+
 	local db = MrPlow.db.profile
 	local full = getTable()
 	local empty = getTable()
@@ -330,6 +344,7 @@ function PlowEngine:Defragment(...)
 			end
 		end
 	end
+
 	-- Now we have two lists. Depending on where we want the empty space (at
 	-- the top or bottom) we have a list of empty spaces and a list of full
 	-- spaces going in the opposite direction. Now we take from the full list,
@@ -341,8 +356,8 @@ function PlowEngine:Defragment(...)
 		local lPosition, sPosition
 
 		if loose and space then
-			lPosition = 100* loose[1] + loose[2]
-			sPosition = 100* space[1] + space[2]
+			lPosition = 100 * loose[1] + loose[2]
+			sPosition = 100 * space[1] + space[2]
 		end
 		-- Now if the space is past the item (depending on which direction
 		-- we're defragging in...)
@@ -405,7 +420,7 @@ end
 local function SortAlpha(a,b)
 	if a.itemName == b.itemName then
 		local pass, ret = pcall(function() return SortCount(a,b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"SortCount: "..ret)
@@ -418,7 +433,7 @@ end
 local function SortRarity(a, b)
 	if a.itemRarity == b.itemRarity then
 		local pass, ret = pcall(function() return SortAlpha(a,b) end)
-		if pass then 
+		if pass then
 			return ret
 		else
 			ErrorPrint(a,b,"SortAlpha: "..ret)
@@ -600,9 +615,9 @@ Item.new = function(count, ItemID, bag, slot)
 	setmetatable(item, Item.mt)
 	if bag > 50 then tbag = bag - 50 end
     item.pos = count
-	item.itemName, item.itemLink, item.itemRarity, item.itemLevel, item.itemMinLevel, 
+	item.itemName, item.itemLink, item.itemRarity, item.itemLevel, item.itemMinLevel,
 	item.itemType, item.itemSubType, item.itemStackCount, item.itemEquipLoc, item.itemTexture = GetItemInfo(ItemID)
-	item.itemID = ItemID 
+	item.itemID = ItemID
 	item.itemCount = select(2, infoFunc(tbag, slot))
     item.itemRanking = itemRanking[item.itemType]
     if not item.itemRanking then item.itemRanking = -1 end
@@ -627,6 +642,12 @@ end
 --
 -- What we need is to check that what we're swapping with isn't already where it's supposed to be.
 function PlowEngine:MassSort(...)
+	if currentProccess then
+		table.insert(queue, getTable(PlowEngine.MassSort, ...))
+		self:Show()
+		return
+	end
+
 	local OriginalLoc = getTable()
 	local Jumble = getTable()
 	local Dirty  = getTable()
@@ -715,7 +736,6 @@ local splitFunc = SplitContainerItem
 
 
 function PlowEngine:CheckMove(fromBag, fromSlot, amount, toBag, toSlot)
-
 	while true do
 		local _, _, locked1 = infoFunc(fromBag, fromSlot)
 		local _, _, locked2 = infoFunc(toBag, toSlot)
@@ -741,23 +761,33 @@ end
 
 
 function PlowEngine.OnUpdate(self, elapsed, ...)
-	if not currentProcess then return end
+	if not currentProcess then
+		if #queue > 0 then
+			local t = table.remove(queue, 1)
+			t[1](self, t[2])
+			returnTable(t)
+			self:Hide()
+		end
+	end
+
 	-- If we have bags to operate on, and PlowList is empty and we're not currently working on a suspended move, then run again.:
 	if sortbags and coroutine.status(sortbags) == "suspended" then
 		coroutine.resume(sortbags)
 		return
 	end
+
 	if BagList and #BagList > 0 and #PlowList == 0 and midmove and coroutine.status(midmove) == "dead" then
 		sortbags = coroutine.create(currentProcess)
 		coroutine.resume(sortbags, self)
 	end
-	if not midmove or coroutine.status(midmove) == "dead" then 
+
+	if not midmove or coroutine.status(midmove) == "dead" then
 		if #PlowList > 0 then
 			CurrentMove = table.remove(PlowList, 1)
 			midmove = coroutine.create(self.CheckMove)
 		end
 	else
-		coroutine.resume(midmove, self, CurrentMove[1], CurrentMove[2], CurrentMove[3], CurrentMove[4], CurrentMove[5]) 
+		coroutine.resume(midmove, self, CurrentMove[1], CurrentMove[2], CurrentMove[3], CurrentMove[4], CurrentMove[5])
 	end
 end
 
@@ -765,9 +795,10 @@ end
 -- Basically this will take a list of bags to create an iterator for, and, depending on what -sort- of 'bag', ie
 -- inventory, or guildbank will return the appropriate -next- [bag|tab]/slot
 -- 51-56 will be guildbankslots
+
 function PlowEngine:ProcessBags(BagList, BagIndex, Slot)
 	local maxSlot
-	
+
 	if BagList[BagIndex] > 50 then
 		maxSlot = 98
 	else
@@ -794,14 +825,14 @@ function PlowEngine:NextSlot(BagList)
 end
 
 function PlowEngine:PrintList(List, limit)
-    for i,v in ipairs(List) do
-    	if i + 1 ~= v.slot then
-	        MrPlow:Print((i+1)..":"..(v.itemName)..": ("..v.bag..":"..v.slot..") : "..(select(3, GetGuildBankItemLink(1, i+1):find("(%b[])")) or "none")) -- v[2] and v[1] ..":"..v[2] or v))
+	for i,v in ipairs(List) do
+	if i + 1 ~= v.slot then
+		MrPlow:Print((i+1)..":"..(v.itemName)..": ("..v.bag..":"..v.slot..") : "..(select(3, GetGuildBankItemLink(1, i+1):find("(%b[])")) or "none")) -- v[2] and v[1] ..":"..v[2] or v))
 		end
-        if limit == i  then break end
-    end
+	if limit == i  then break end
+	end
 end
 
 function PlowEngine:SortMe()
-    self:MassSort(0,1,2,3,4)
+	self:MassSort(0,1,2,3,4)
 end
