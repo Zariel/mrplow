@@ -66,7 +66,8 @@ function MrPlow:OnInitialize()
 			IgnoreSlots = {},
 			IgnoreBags = {},
 			EmptySpace = "Bottom",
-		} });
+		}
+	});
 
 	db = self.db.profile;
 	self:RegisterChatCommand( "mrplow", "DoStuff")
@@ -74,6 +75,20 @@ function MrPlow:OnInitialize()
 	MrPlow.PlowEngine:Enable();
 	meta = MrPlow:getTable()
 	meta.__mode = "v"
+
+	local ldb = LibStub("LibDataBroker-1.1", true)
+	if ldb then
+		local t = {
+			type = "launcher",
+			icon = "Interface\\AddOns\\MrPlow\\icon.tga",
+			-- TODO: Later add a right click to bring a drop down
+			-- menu of things to do.
+			OnClick = function()
+				PlowEngine:MassSort(1, 2, 3, 4)
+			end,
+		}
+		self.ldb = ldb:NewDataObject("MrPlow", t)
+	end
 end
 
 function MrPlow:BagCheck()
