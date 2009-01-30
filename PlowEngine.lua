@@ -153,6 +153,10 @@ local armWepRank = {
 	INVTYPE_TABARD = 26,
 }
 
+local infoFunc = GetContainerItemInfo
+local pickFunc = PickupContainerItem
+local splitFunc = SplitContainerItem
+
 local PlowList = getTable() -- Storage for the Joblisting
 
 PlowEngine:Hide() -- Prevent update
@@ -747,9 +751,6 @@ function PlowEngine:MoveSlot(fromBag, fromSlot, amount, toBag, toSlot)
 	table.insert(PlowList, getTable(fromBag, fromSlot, amount, toBag, toSlot))
 end
 
-local infoFunc = GetContainerItemInfo
-local pickFunc = PickupContainerItem
-local splitFunc = SplitContainerItem
 
 
 function PlowEngine:CheckMove(fromBag, fromSlot, amount, toBag, toSlot)
