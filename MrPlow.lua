@@ -22,13 +22,13 @@ local meta
 MrPlow.PlowEngine = CreateFrame("Frame", "PlowEngine")
 
 -- Pool of frames to reuse.
-MrPlow.tablePool = setmetatable({},
-	( {__index = function(self, n)
+MrPlow.tablePool = setmetatable({}, {
+	__index = function(self, n)
 			if n==0 then
 				return table.remove(self) or {}
 			end
-		end})
-	)
+		end
+	})
 
 function MrPlow.getTable(...)
 	local newTable = MrPlow.tablePool[0]

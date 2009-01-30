@@ -15,9 +15,9 @@ local BagList = {}
 local CurrentMove = nil
 local sortbags, midmove
 
-local running
-
 local Clean  = getTable()
+
+local run
 
 local L = LibStub("AceLocale-3.0"):GetLocale("MrPlow", true)
 
@@ -202,11 +202,16 @@ end
 -- ammo usage, spell component usage etc) will use that non-full stack rather
 -- than a full one, maintaining the compression as much as possible.
 function PlowEngine:Restack(...)
-	if currentProccess and currentProccess ~= PlowEngine.Restack  then
-		table.insert(queue, getTable(PlowEngine.Restack, ...))
+	if currentProcess and not currentProcess == PlowEngine.Restack then
+		-- We're running a job so add this to queue
+		table.insert(queue, getTable("Restack", getTable(...)))
+		MrPlow:Print("Adding Stack to queue")
 		self:Show()
 		return
 	end
+
+	run = "Stack"
+	currentProcess = PlowEngine.Restack
 
 	local db = MrPlow.db.profile
 	local notFull = getTable()
@@ -302,14 +307,11 @@ function PlowEngine:Restack(...)
 	-- Now run
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Restack")
-		currentProcess = PlowEngine.Restack
-		runnign = "Stack"
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Stopping Restack")
 		PlowEngine:Hide()
-		MrPlow.currentFunction = nil
-		running = nil
+		currentFunction = nil
 		returnTable(dupe)
 		returnTable(notFull)
 	end
@@ -317,11 +319,15 @@ end
 
 
 function PlowEngine:Defragment(...)
-	if currentProccess and currentProccess ~= PlowEngine.Defragment then
-		table.insert(queue, getTable(PlowEngine.Defragment, ...))
+	if currentProcess and not currentProcess == PlowEngine.Defragment then
+		-- We're Running a job which isnt this one
+		table.insert(queue, getTable("Defragment", getTable(...)))
 		self:Show()
 		return
 	end
+
+	run = "Defrag"
+	currentProcess = PlowEngine.Defragment
 
 	local db = MrPlow.db.profile
 	local full = getTable()
@@ -390,7 +396,6 @@ function PlowEngine:Defragment(...)
 	-- Now run
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Defragment")
-		currentProcess = PlowEngine.Defragment
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Finishing Defragment")
@@ -483,7 +488,6 @@ local function SortPTCategory(a, b)
 		b.Set = bSet
 		local aRank = ingredientRanking[aSet]
 		local bRank = ingredientRanking[bSet]
-
 
 		if not aRank and not bRank then
 			if aSet ~= bSet then
@@ -606,7 +610,7 @@ local Item = getTable()
 Item.mt = getTable()
 
 Item.mt.__lt = function(a, b)
-    return TopLevelSort(a,b)
+	return TopLevelSort(a,b)
 end
 
 Item.mt.__eq = function(a, b)
@@ -661,11 +665,13 @@ function MrPlow:PrintPlowList()
 end
 
 function PlowEngine:MassSort(...)
-	if currentProccess and currentProccess ~= PlowEngine.MassSort then
-		table.insert(queue, getTable(PlowEngine.MassSort, ...))
+	if currentProcess and not curentProcess == PlowEngine.MassSort then
+		table.insert(queue, getTable("MassSort", getTable(...)))
 		self:Show()
 		return
 	end
+
+	run = "Sort"
 
 	local OriginalLoc = getTable()
 	local Jumble = getTable()
@@ -734,13 +740,11 @@ function PlowEngine:MassSort(...)
 	if #PlowList > 0 then
 		MrPlow:Print("Items to move: "..#PlowList)
 		currentProcess = PlowEngine.MassSort
-		running = "MassSort"
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Completing Sort")
 		PlowEngine:Hide()
 		currentProcess = nil
-		running = nil
 		returnTable(BagList)
 		returnTable(Clean)
 	end
@@ -750,8 +754,6 @@ end
 function PlowEngine:MoveSlot(fromBag, fromSlot, amount, toBag, toSlot)
 	table.insert(PlowList, getTable(fromBag, fromSlot, amount, toBag, toSlot))
 end
-
-
 
 function PlowEngine:CheckMove(fromBag, fromSlot, amount, toBag, toSlot)
 	while true do
@@ -790,16 +792,21 @@ end
 -- MassSort doesnt pre-empt a complete move path.
 
 function PlowEngine.OnUpdate(self, elapsed, ...)
-	if not currentProcess then
+	-- Refangled queue managment
+	-- Are we running a job?
+	if currentProcess then
+		self:Run()
+	else
+		-- Hammer time!
 		if #queue > 0 then
-			local t = table.remove(queue, 1)
-			t[1](self, t[2])
-			returnTable(t)
-			self:Hide()
-			return
+			local method, args = unpack(table.remove(queue, 1))
+			PlowEngine[method](PlowEngine, unpack(args))
+			PlowEngine:Hide()
 		end
 	end
+end
 
+function PlowEngine:Run()
 	-- If we have bags to operate on, and PlowList is empty and we're not currently working on a suspended move, then run again.:
 	if sortbags and coroutine.status(sortbags) == "suspended" then
 		coroutine.resume(sortbags)
