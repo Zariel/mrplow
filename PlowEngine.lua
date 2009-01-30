@@ -327,7 +327,6 @@ function PlowEngine:Defragment(...)
 	end
 
 	run = "Defrag"
-	currentProcess = PlowEngine.Defragment
 
 	local db = MrPlow.db.profile
 	local full = getTable()
@@ -396,6 +395,7 @@ function PlowEngine:Defragment(...)
 	-- Now run
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Defragment")
+		currentProcess = PlowEngine.Defragment
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Finishing Defragment")
@@ -801,8 +801,8 @@ function PlowEngine.OnUpdate(self, elapsed, ...)
 		if #queue > 0 then
 			local method, args = unpack(table.remove(queue, 1))
 			PlowEngine[method](PlowEngine, unpack(args))
-			PlowEngine:Hide()
 		end
+		PlowEngine:Hide()
 	end
 end
 
