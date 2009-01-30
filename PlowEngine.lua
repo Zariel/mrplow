@@ -649,8 +649,6 @@ end
 --
 -- What we need is to check that what we're swapping with isn't already where it's supposed to be.
 
-local iterations = 0
-
 function MrPlow:PrintPlowList()
 	for i, t in ipairs(PlowList) do
 		local fromBag, fromSlot, amount, toBag, toSlot = unpack(t)
@@ -693,7 +691,7 @@ function PlowEngine:MassSort(...)
 				if(select(3, infoFunc(tbag,slot))) then
 					coroutine.yield(self)
 				else
-					break;
+					break
 				end
 			end
 			local link = select(3, (linkFunc(tbag, slot) or ""):find("item:(%d+)"))
@@ -729,11 +727,6 @@ function PlowEngine:MassSort(...)
 	returnTable(Jumble)
 	returnTable(OriginalLoc)
 
-	iterations = iterations + 1
-	MrPlow:Print("Iteration:", iterations)
-
-	MrPlow:PrintPlowList()
-
 	if #PlowList > 0 then
 		MrPlow:Print("Items to move: "..#PlowList)
 		currentProcess = PlowEngine.MassSort
@@ -746,10 +739,8 @@ function PlowEngine:MassSort(...)
 		running = nil
 		returnTable(BagList)
 		returnTable(Clean)
-		iterations = 0
 	end
 end
-
 
 -- separated out for later refactoring in regards to job control
 function PlowEngine:MoveSlot(fromBag, fromSlot, amount, toBag, toSlot)

@@ -67,12 +67,12 @@ function MrPlow:OnInitialize()
 			IgnoreBags = {},
 			EmptySpace = "Bottom",
 		}
-	});
+	})
 
-	db = self.db.profile;
+	db = self.db.profile
 	self:RegisterChatCommand("mrplow", "DoStuff")
 	self:RegisterChatCommand("mp", "DoStuff")
-	MrPlow.PlowEngine:Enable();
+	MrPlow.PlowEngine:Enable()
 	meta = MrPlow:getTable()
 	meta.__mode = "v"
 
