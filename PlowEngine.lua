@@ -13,6 +13,9 @@ MrPlow.currentProcess = nil
 local currentProcess = MrPlow.currentProcess
 local BagList = {}
 local CurrentMove = nil
+local sortbags, midmove
+
+local running
 
 local Clean  = getTable()
 
@@ -195,7 +198,7 @@ end
 -- ammo usage, spell component usage etc) will use that non-full stack rather
 -- than a full one, maintaining the compression as much as possible.
 function PlowEngine:Restack(...)
-	if currentProccess then
+	if currentProccess and currentProccess ~= PlowEngine.Restack  then
 		table.insert(queue, getTable(PlowEngine.Restack, ...))
 		self:Show()
 		return
@@ -296,11 +299,13 @@ function PlowEngine:Restack(...)
 	if #PlowList > 0 then
 		MrPlow:Print("Starting Restack")
 		currentProcess = PlowEngine.Restack
+		runnign = "Stack"
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Stopping Restack")
 		PlowEngine:Hide()
 		MrPlow.currentFunction = nil
+		running = nil
 		returnTable(dupe)
 		returnTable(notFull)
 	end
@@ -308,7 +313,7 @@ end
 
 
 function PlowEngine:Defragment(...)
-	if currentProccess then
+	if currentProccess and currentProccess ~= PlowEngine.Defragment then
 		table.insert(queue, getTable(PlowEngine.Defragment, ...))
 		self:Show()
 		return
@@ -614,13 +619,15 @@ Item.new = function(count, ItemID, bag, slot)
 	local tbag = bag
 	setmetatable(item, Item.mt)
 	if bag > 50 then tbag = bag - 50 end
-    item.pos = count
+
+	item.pos = count
 	item.itemName, item.itemLink, item.itemRarity, item.itemLevel, item.itemMinLevel,
 	item.itemType, item.itemSubType, item.itemStackCount, item.itemEquipLoc, item.itemTexture = GetItemInfo(ItemID)
 	item.itemID = ItemID
 	item.itemCount = select(2, infoFunc(tbag, slot))
-    item.itemRanking = itemRanking[item.itemType]
-    if not item.itemRanking then item.itemRanking = -1 end
+	item.itemRanking = itemRanking[item.itemType]
+
+	if not item.itemRanking then item.itemRanking = -1 end
 	item.bag = bag
 	item.slot = slot
 	item.Set = item.itemEquipLoc
@@ -641,8 +648,18 @@ end
 -- Sorted Bag/Slot
 --
 -- What we need is to check that what we're swapping with isn't already where it's supposed to be.
+
+local iterations = 0
+
+function MrPlow:PrintPlowList()
+	for i, t in ipairs(PlowList) do
+		local fromBag, fromSlot, amount, toBag, toSlot = unpack(t)
+		self:Print(i, fromBag, fromSlot, amount, toBag, toSlot)
+	end
+end
+
 function PlowEngine:MassSort(...)
-	if currentProccess then
+	if currentProccess and currentProccess ~= PlowEngine.MassSort then
 		table.insert(queue, getTable(PlowEngine.MassSort, ...))
 		self:Show()
 		return
@@ -707,20 +724,29 @@ function PlowEngine:MassSort(...)
 			end
 		end
 	end
+
 	returnTable(Dirty)
 	returnTable(Jumble)
 	returnTable(OriginalLoc)
 
+	iterations = iterations + 1
+	MrPlow:Print("Iteration:", iterations)
+
+	MrPlow:PrintPlowList()
+
 	if #PlowList > 0 then
 		MrPlow:Print("Items to move: "..#PlowList)
 		currentProcess = PlowEngine.MassSort
+		running = "MassSort"
 		PlowEngine:Show()
 	else
 		MrPlow:Print("Completing Sort")
 		PlowEngine:Hide()
 		currentProcess = nil
+		running = nil
 		returnTable(BagList)
 		returnTable(Clean)
+		iterations = 0
 	end
 end
 
@@ -759,6 +785,17 @@ function PlowEngine:CheckMove(fromBag, fromSlot, amount, toBag, toSlot)
 	end
 end
 
+-- I dont understand the reason job control is done the way it is, currently
+-- the function, ie MassSort, is called repeatedly untill the bag is sorted.
+-- To me it makes more sense to have a function which sets up what to move and
+-- where to move it (I think this is what plowlist is for) then once the
+-- plowlist is setup run a driver function which iterates through the plowlist
+-- moving the items. I dont know if MassSort generates a full list of things
+-- to move in its first run. I want to split the functions into a driver,
+-- which runs through PlowList and just moves stuff and a function to generate
+-- a plowlist.
+--
+-- MassSort doesnt pre-empt a complete move path.
 
 function PlowEngine.OnUpdate(self, elapsed, ...)
 	if not currentProcess then
@@ -767,6 +804,7 @@ function PlowEngine.OnUpdate(self, elapsed, ...)
 			t[1](self, t[2])
 			returnTable(t)
 			self:Hide()
+			return
 		end
 	end
 

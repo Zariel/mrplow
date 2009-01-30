@@ -70,8 +70,8 @@ function MrPlow:OnInitialize()
 	});
 
 	db = self.db.profile;
-	self:RegisterChatCommand( "mrplow", "DoStuff")
-	self:RegisterChatCommand( "mp", "DoStuff")
+	self:RegisterChatCommand("mrplow", "DoStuff")
+	self:RegisterChatCommand("mp", "DoStuff")
 	MrPlow.PlowEngine:Enable();
 	meta = MrPlow:getTable()
 	meta.__mode = "v"
@@ -118,11 +118,11 @@ function MrPlow:DoStuff(args)
 		PlowEngine:Defragment(0, 1, 2, 3, 4)
 		PlowEngine:MassSort(0, 1, 2, 3, 4)
 	elseif args == "bankstack" then
-		PlowEngine:Restack(-1,5,6,7,8,9,10,11)
+		PlowEngine:Restack(-1, 5, 6, 7, 8, 9, 10, 11)
 	elseif args == "bankdefrag" then
-		PlowEngine:Defragment(-1,5,6,7,8,9,10,11)
+		PlowEngine:Defragment(-1, 5, 6, 7, 8, 9, 10, 11)
 	elseif args == "banksort" then
-		PlowEngine:MassSort(-1,5,6,7,8,9,10,11)
+		PlowEngine:MassSort(-1, 5, 6, 7, 8, 9, 10, 11)
 	end
 end
 
