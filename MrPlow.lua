@@ -78,16 +78,16 @@ function MrPlow:OnInitialize()
 
 	local ldb = LibStub("LibDataBroker-1.1", true)
 	if ldb then
-		local t = {
+		self.ldb = ldb:NewDataObject("MrPlow", {
 			type = "launcher",
+			tocname = "Fiend",
 			icon = "Interface\\AddOns\\MrPlow\\icon.tga",
 			-- TODO: Later add a right click to bring a drop down
 			-- menu of things to do.
 			OnClick = function()
 				PlowEngine:MassSort(1, 2, 3, 4)
 			end,
-		}
-		self.ldb = ldb:NewDataObject("MrPlow", t)
+		})
 	end
 end
 
@@ -97,10 +97,12 @@ function MrPlow:BagCheck()
 		local btype = GetItemFamily(name)
 		-- Ignores all slots in a bag
 		if (btype and btype > 0) and name ~= "Backpack" then
-			db.IgnoreBags[i] = true
+			for j = 1, GetNumContainerSlots(i) do
+				self:IgnoreSlots(i, j)
+			end
 		-- This checks if the bag has changed to a bag we can sort
-		elseif db.IgnoreBags[i] then
-			db.IgnoreBags[i] = nil
+		elseif db.IgnoreSlots[i] then
+			db.IgnoreSlots[i] = nil
 		end
 	end
 end
@@ -123,6 +125,11 @@ function MrPlow:DoStuff(args)
 		PlowEngine:Defragment(-1, 5, 6, 7, 8, 9, 10, 11)
 	elseif args == "banksort" then
 		PlowEngine:MassSort(-1, 5, 6, 7, 8, 9, 10, 11)
+	else
+		self:Print("MrPlow - Plows your bags!")
+		self:Print("Usage:")
+		self:Print("    stack: Restack all items")
+		self:Print("    defrag: Defragments items")
 	end
 end
 
@@ -140,6 +147,12 @@ function MrPlow:IgnoreSlots(bag, slot)
 	end
 	db.IgnoreSlots[bag][slot] = true
 end
+
+function MrPlow:IgnoreBag(bag)
+	if not db.IgnoreSlots[bag] then
+	end
+end
+
 
 function MrPlow:UnignoreSlots(bag, slot)
 	db.IgnoreSlots[bag][slot] = nil

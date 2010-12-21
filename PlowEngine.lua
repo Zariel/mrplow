@@ -340,7 +340,7 @@ function PlowEngine:Defragment(...)
 		if not db.IgnoreBags[bag] then
 			for slot=1, GetContainerNumSlots(bag) do
 				if not (db.IgnoreSlots[bag] and db.IgnoreSlots[bag][slot]) then
-					local link = select(3, (GetContainerItemLink(bag, slot) or ""):find("item:(%d+):"))
+					local link = GetContainerItemID(bag, slot)
 					if not link then -- empty slot
 						if db.EmptySpace == "Bottom" then
 							table.insert(empty, getTable(bag, slot))
@@ -715,17 +715,19 @@ function PlowEngine:MassSort(...)
 	end
 	table.sort(Jumble)
 	--PlowEngine:PrintList(Jumble,114)
+	local slot
 	for i=1,#Jumble do
 		local item = Jumble[i]
+		slot = item.bag .. ":" .. item.slot
 		-- If the current item to be placed does not have an identical item there or is in the same position
 		-- as what needs to move into it, then continue
 		if item ~= Jumble[item.pos] and item ~= OriginalLoc[i][3] then
 			-- If we haven't moved something into either of these slots, then continue
-			if not (Dirty[item.bag..":"..item.slot] or Dirty[OriginalLoc[i][1]..":"..OriginalLoc[i][2]]) then
+			if not (Dirty[slot] or Dirty[OriginalLoc[i][1]..":"..OriginalLoc[i][2]]) then
 				-- If we're not displacing an already correct location, then continue
-				if not Clean[item.bag..":"..item.slot] and not Clean[OriginalLoc[i][1]..":"..OriginalLoc[i][2]] then
-					PlowEngine:MoveSlot(item.bag, item.slot, -1, OriginalLoc[i][1], OriginalLoc[i][2]) -- Move the item into it's proper position
-					Dirty[item.bag..":"..item.slot] = true
+				if not Clean[slot] and not Clean[OriginalLoc[i][1]..":"..OriginalLoc[i][2]] then
+					PlowEngine:MoveSlot(slot, -1, OriginalLoc[i][1], OriginalLoc[i][2]) -- Move the item into it's proper position
+					Dirty[slot] = true
 					Dirty[OriginalLoc[i][1]..":"..OriginalLoc[i][2]] = true
 					Clean[OriginalLoc[i][1]..":"..OriginalLoc[i][2]] = true -- Moving it into the correct position
 				end
